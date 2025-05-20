@@ -1,0 +1,17 @@
+apiVersion: v2
+name: java-calculator-app
+version: 0.1.0
+description: A simple Java-based calculator application for basic arithmetic operations.
+type: application
+maintainers:
+  - name: Your Name
+    email: your.email@example.com
+keywords:
+  - java
+  - calculator
+  - helm
+  - kubernetes
+home: https://github.com/yourusername/java-calculator-app
+sources:
+  - https://github.com/yourusername/java-calculator-app
+dependencies: []

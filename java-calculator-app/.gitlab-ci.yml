@@ -1,0 +1,50 @@
+stages:
+  - build
+  - test
+  - scan
+  - deploy
+
+variables:
+  DOCKER_IMAGE: "your-docker-image-name"
+  JFROG_URL: "your-jfrog-url"
+  JFROG_REPO: "your-jfrog-repo"
+  ACR_URL: "your-acr-url"
+  ACR_REPO: "your-acr-repo"
+  HELM_CHART_PATH: "helm"
+
+build:
+  stage: build
+  script:
+    - mvn clean package
+
+test:
+  stage: test
+  script:
+    - mvn test
+
+scan:
+  stage: scan
+  script:
+    - docker build -t $DOCKER_IMAGE .
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL $DOCKER_IMAGE
+    - semgrep --config your-semgrep-config.yaml $DOCKER_IMAGE
+
+push_to_jfrog:
+  stage: deploy
+  script:
+    - echo "Pushing Docker image to JFrog Artifactory"
+    - docker tag $DOCKER_IMAGE $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE
+    - docker push $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE
+
+deploy_to_aks:
+  stage: deploy
+  script:
+    - echo "Pulling Docker image from JFrog Artifactory"
+    - docker pull $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE
+    - echo "Pushing Docker image to Azure Container Registry"
+    - docker tag $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE $ACR_URL/$ACR_REPO/$DOCKER_IMAGE
+    - docker push $ACR_URL/$ACR_REPO/$DOCKER_IMAGE
+    - echo "Deploying to Azure Kubernetes Service"
+    - helm upgrade --install your-release-name $HELM_CHART_PATH --set image.repository=$ACR_URL/$ACR_REPO/$DOCKER_IMAGE
+  only:
+    - main
